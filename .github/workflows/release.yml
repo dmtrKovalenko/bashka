@@ -1,0 +1,188 @@
+name: Release
+
+# Every push to main becomes a release: the minor version is bumped, binaries are built for
+# Linux (glibc and musl), Android and macOS, install.sh is pinned to their checksums, and the bump is committed
+# back to main under a `vX.Y.0` tag. Pull requests only build and test.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  version:
+    name: Next version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.next.outputs.version }}
+      tag: ${{ steps.next.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: next
+        run: scripts/next_version.sh
+
+  lint:
+    name: Lint (fmt + clippy pedantic)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt, clippy
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: cargo test
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs: version
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux via cross-rs (Docker images with the right toolchains).
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+          # Android via cargo-ndk with the runner's preinstalled NDK (cross's stable Android image
+          # ships an NDK too old for current Rust: its linker has no libunwind).
+          - os: ubuntu-latest
+            target: aarch64-linux-android
+            android: true
+          # macOS natively.
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+          cache-key: ${{ matrix.target }}
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-edit
+      - name: Set version
+        run: cargo set-version "${{ needs.version.outputs.version }}"
+
+      - uses: taiki-e/install-action@v2
+        if: runner.os == 'Linux' && !matrix.android
+        with:
+          tool: cross
+      - name: Build (Linux, cross)
+        if: runner.os == 'Linux' && !matrix.android
+        run: cross build --release --target ${{ matrix.target }}
+
+      - uses: taiki-e/install-action@v2
+        if: matrix.android
+        with:
+          tool: cargo-ndk
+      - name: Build (Android, cargo-ndk)
+        if: matrix.android
+        # The runner exports ANDROID_NDK_ROOT (NDK 27); cargo-ndk reads it directly.
+        run: |
+          echo "NDK: $ANDROID_NDK_ROOT"
+          cargo ndk --target ${{ matrix.target }} --platform 24 build --release
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          MACOSX_DEPLOYMENT_TARGET=12 cargo build --release --target ${{ matrix.target }}
+          codesign --force --sign - target/${{ matrix.target }}/release/bashka
+
+      - name: Stage artifact
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/bashka dist/bashka-${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bashka-${{ matrix.target }}
+          path: dist/bashka-${{ matrix.target }}
+          if-no-files-found: error
+
+  release:
+    name: Release ${{ needs.version.outputs.tag }}
+    needs: [version, lint, test, build]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: binaries
+          pattern: bashka-*
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd binaries
+          for f in bashka-*; do sha256sum "$f" > "$f.sha256"; done
+          ls -l
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-edit
+      - name: Pin version and checksums
+        run: |
+          cargo set-version "${{ needs.version.outputs.version }}"
+          scripts/pin_installer.sh "${{ needs.version.outputs.version }}" binaries
+          bash -n install.sh
+
+      - name: Commit and tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Cargo.toml Cargo.lock install.sh
+          git commit -m "chore: release ${{ needs.version.outputs.tag }} [skip ci]"
+          git tag -a "${{ needs.version.outputs.tag }}" -m "bashka ${{ needs.version.outputs.tag }}"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          git push origin "${{ needs.version.outputs.tag }}"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: ${{ needs.version.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            binaries/*
+            install.sh
+          body: |
+            ```sh
+            curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/dmtrKovalenko/bashka/main/install.sh | bash
+            ```
+            `install.sh` on `main` is pinned to the checksums of these binaries. Already have bashka? `bashka update bashka`.

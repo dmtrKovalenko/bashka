@@ -1,0 +1,24 @@
+# bashka built-in defaults. Every registered flag is enabled with its
+# recommended options unless listed under [flags] here or in
+# ~/.config/bashka/config.toml. Run `bashka config init` for a full listing.
+
+[shared]
+network_commands = ["curl", "wget", "fetch"]
+shells = ["bash", "sh", "zsh", "dash", "ksh"]
+
+[interaction]
+on_red        = "ask"     # ask | abort | proceed
+on_neutral    = "ask"     # ask | abort | proceed  (no reds, but too few greens)
+follow_remote = "ask"     # ask | always | never
+descend       = "hybrid"  # hybrid | fetch_ahead | shim
+max_depth     = 5
+
+[policy]
+green_min        = 3      # greens needed to auto-run when there are no reds
+strong_gate_reds = 3      # reds from which --force / explicit confirmation is required
+
+[ui]
+icons      = "emoji"      # emoji | nerd | ascii
+animations = true         # spinners while fetching forwards and on hand-off
+
+[flags]

@@ -1,0 +1,554 @@
+# Software that officially documents installation via piping a remote shell
+# script into a shell (the `curl ... | bash` / `curl ... | sh` pattern and its
+# variants, incl. the Windows PowerShell `irm ... | iex` analog).
+#
+# Each entry is keyed by a slug of the tool name and records:
+#   name             - display name
+#   description      - one line on what it does
+#   category         - grouping
+#   url              - official source where the command is documented
+#   command          - the recommended/official install command (Unix)
+#   command_windows  - official Windows PowerShell one-liner, where documented
+#   safety           - caveats: primary-vs-fallback, sudo, TLS hardening,
+#                      partial-download mitigation, warnings, safer alternatives
+#
+# Commands are copied byte-for-byte from the official source. Verified 2026-06-08.
+# CAVEAT: version-pinned URLs (e.g. nvm v0.40.5) and moving refs (HEAD/master/main)
+# drift over time -- re-verify the exact bytes before relying on them.
+
+# ---------------------------------------------------------------------------
+# Language toolchains & version managers
+# ---------------------------------------------------------------------------
+
+[tools.rustup]
+name = "rustup"
+description = "Official Rust toolchain installer and version manager"
+category = "Language toolchains & version managers"
+url = "https://rustup.rs"
+command = "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+safety = "PRIMARY/official method, shown verbatim with no warning. Uses hardened TLS flags (--proto '=https' --tlsv1.2). No inspect-first step documented."
+
+[tools.nvm]
+name = "nvm"
+description = "Node Version Manager for installing/switching Node.js versions"
+category = "Language toolchains & version managers"
+url = "https://github.com/nvm-sh/nvm"
+command = "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.5/install.sh | bash"
+safety = "PRIMARY method. A wget variant is also documented: wget -qO- .../install.sh | bash. URL pins a version (v0.40.5) that will change with releases."
+
+[tools.volta]
+name = "Volta"
+description = "JavaScript toolchain manager (Node/npm/yarn) written in Rust"
+category = "Language toolchains & version managers"
+url = "https://docs.volta.sh/guide/getting-started"
+command = "curl https://get.volta.sh | bash"
+safety = "PRIMARY (and only) documented method for most Unix systems including macOS. No inspect-first alternative shown."
+
+[tools.pyenv]
+name = "pyenv"
+description = "Python version manager"
+category = "Language toolchains & version managers"
+url = "https://github.com/pyenv/pyenv"
+command = "curl -fsSL https://pyenv.run | bash"
+safety = "Explicitly labeled '1. Automatic installer (Recommended)', listed before the git-checkout method. On macOS, Homebrew is separately suggested for basic use."
+
+[tools.deno]
+name = "Deno"
+description = "Secure JavaScript/TypeScript runtime"
+category = "Language toolchains & version managers"
+url = "https://docs.deno.com/runtime/getting_started/installation/"
+command = "curl -fsSL https://deno.land/install.sh | sh"
+command_windows = "irm https://deno.land/install.ps1 | iex"
+safety = "Docs explicitly RECOMMEND the install script over npm (npm install degrades startup time). Both shell and PowerShell are first-class."
+
+[tools.bun]
+name = "Bun"
+description = "Fast all-in-one JavaScript runtime & toolkit"
+category = "Language toolchains & version managers"
+url = "https://bun.sh"
+command = "curl -fsSL https://bun.sh/install | bash"
+command_windows = "powershell -c \"irm bun.sh/install.ps1|iex\""
+safety = "Lead method on macOS/Linux; package managers are a secondary tab. Installer uses set -euo pipefail."
+
+[tools.sdkman]
+name = "SDKMAN!"
+description = "SDK manager for JVM tools (Java, Kotlin, Scala, Gradle, etc.)"
+category = "Language toolchains & version managers"
+url = "https://sdkman.io/install"
+command = "curl -s \"https://get.sdkman.io\" | bash"
+safety = "PRIMARY method. A | zsh variant and parameterized forms (?rcupdate=false, ?ci=true) are documented. No inspect-first alternative."
+
+[tools.fnm]
+name = "fnm"
+description = "Fast Node.js version manager written in Rust"
+category = "Language toolchains & version managers"
+url = "https://github.com/Schniz/fnm"
+command = "curl -fsSL https://fnm.vercel.app/install | bash"
+safety = "Lead 'automatic' option, listed alongside package managers (docs note macOS prefers Homebrew). Variants: | bash -s -- --skip-shell / --install-dir."
+
+[tools.mise]
+name = "mise"
+description = "Polyglot runtime, tool & env manager (asdf-compatible)"
+category = "Language toolchains & version managers"
+url = "https://mise.jdx.dev/installing-mise.html"
+command = "curl https://mise.run | sh"
+safety = "PRIMARY method. Offers a GPG-signature-verified alternative install path. Shell-specific variants: mise.run/zsh|bash|fish."
+
+[tools.rye]
+name = "rye"
+description = "Python project & version manager (Astral)"
+category = "Language toolchains & version managers"
+url = "https://rye.astral.sh/guide/installation/"
+command = "curl -sSf https://rye.astral.sh/get | bash"
+safety = "PRIMARY Unix method. Customizable via env vars: ... | RYE_VERSION=\"0.4.0\" RYE_INSTALL_OPTION=\"--yes\" bash. Windows uses a downloaded .exe."
+
+[tools.gvm]
+name = "gvm"
+description = "Go Version Manager"
+category = "Language toolchains & version managers"
+url = "https://github.com/moovweb/gvm"
+command = "bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)"
+safety = "PRIMARY (only) documented method, using process substitution. zsh users swap bash->zsh. No inspect-first alternative."
+
+[tools.jabba]
+name = "jabba"
+description = "Cross-platform Java Version Manager"
+category = "Language toolchains & version managers"
+url = "https://github.com/Jabba-Team/jabba"
+command = "curl -sL https://github.com/Jabba-Team/jabba/raw/main/install.sh | bash && . ~/.jabba/jabba.sh"
+command_windows = "Invoke-Expression (Invoke-WebRequest https://github.com/Jabba-Team/jabba/raw/main/install.ps1 -UseBasicParsing).Content"
+safety = "PRIMARY on both Unix and Windows. wget -qO- can replace curl -sL; | bash -s -- --skip-rc skips rc edits. (Original shyiko/jabba repo now redirects here.)"
+
+[tools.n]
+name = "n"
+description = "Node.js version manager (Bash script)"
+category = "Language toolchains & version managers"
+url = "https://github.com/tj/n"
+command = "curl -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n | bash -s install lts"
+safety = "FALLBACK ONLY -- npm (npm install -g n) is the primary method; this is the no-npm bootstrap. A download-then-run alternative is also documented."
+
+# ---------------------------------------------------------------------------
+# Package managers
+# ---------------------------------------------------------------------------
+
+[tools.homebrew]
+name = "Homebrew"
+description = "Package manager for macOS and Linux"
+category = "Package managers"
+url = "https://brew.sh"
+command = "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+safety = "PRIMARY method (macOS/Linux/WSL). Uses command-substitution rather than a literal pipe (an accepted variant). URL tracks the moving HEAD ref."
+
+[tools.nix]
+name = "Nix"
+description = "Purely-functional package manager"
+category = "Package managers"
+url = "https://nixos.org/download/"
+command = "curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --daemon"
+safety = "Multi-user install is RECOMMENDED (shown first). Single-user variant uses --no-daemon but still invokes sudo to create /nix. Hardened TLS flags."
+
+# ---------------------------------------------------------------------------
+# Containers / Kubernetes / infrastructure
+# ---------------------------------------------------------------------------
+
+[tools.k3s]
+name = "k3s"
+description = "Lightweight CNCF-certified Kubernetes distribution"
+category = "Containers / Kubernetes / infrastructure"
+url = "https://docs.k3s.io/quick-start"
+command = "curl -sfL https://get.k3s.io | sh -"
+safety = "PRIMARY/headline method ('convenient way to install it as a service'). Env-var variants documented (K3S_URL, K3S_TOKEN). Script is POSIX sh with set -e."
+
+[tools.rke2]
+name = "RKE2"
+description = "Rancher's next-generation Kubernetes distribution"
+category = "Containers / Kubernetes / infrastructure"
+url = "https://docs.rke2.io/install/quickstart"
+command = "curl -sfL https://get.rke2.io | sh -"
+safety = "PRIMARY documented method. Variant: | INSTALL_RKE2_TYPE=\"agent\" sh -."
+
+[tools.k3d]
+name = "k3d"
+description = "Runs k3s (lightweight Kubernetes) inside Docker"
+category = "Containers / Kubernetes / infrastructure"
+url = "https://k3d.io"
+command = "curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash"
+safety = "One option among many (Homebrew, Scoop, go install, etc.). wget variant documented; pinned form: | TAG=v5.0.0 bash. No security warning given."
+
+[tools.tilt]
+name = "Tilt"
+description = "Multi-service local Kubernetes dev with live update"
+category = "Containers / Kubernetes / infrastructure"
+url = "https://docs.tilt.dev/install.html"
+command = "curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/install.sh | bash"
+command_windows = "iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/install.ps1'))"
+safety = "PRIMARY recommended install for macOS/Linux. A manual download-then-extract alternative is also documented."
+
+[tools.devbox]
+name = "Devbox"
+description = "Instant, reproducible dev environments built on Nix (jetify)"
+category = "Containers / Kubernetes / infrastructure"
+url = "https://www.jetify.com/docs/devbox/installing_devbox/"
+command = "curl -fsSL https://get.jetify.com/devbox | bash"
+safety = "PRIMARY documented install."
+
+[tools.flux]
+name = "Flux CLI"
+description = "CLI for Flux, the GitOps toolkit for Kubernetes"
+category = "Containers / Kubernetes / infrastructure"
+url = "https://fluxcd.io/flux/installation/"
+command = "curl -s https://fluxcd.io/install.sh | sudo bash"
+safety = "One option among several (brew, mise, AUR, nix, choco). NOTE: pipes into `sudo bash` -- runs with root privileges."
+
+[tools.dagger]
+name = "Dagger"
+description = "Programmable CI/CD engine that runs pipelines in containers"
+category = "Containers / Kubernetes / infrastructure"
+url = "https://docs.dagger.io/install/"
+command = "curl -fsSL https://dl.dagger.io/dagger/install.sh | BIN_DIR=/usr/local/bin sh"
+safety = "Non-Homebrew option (brew is listed first on macOS; winget on Windows). Variants: DAGGER_VERSION=, sudo -E sh, DAGGER_COMMIT=head. Plain `| sh` installs to ./bin."
+
+[tools.kustomize]
+name = "kustomize"
+description = "Template-free customization of Kubernetes YAML"
+category = "Containers / Kubernetes / infrastructure"
+url = "https://kubectl.docs.kubernetes.io/installation/kustomize/binaries/"
+command = "curl -s \"https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh\"  | bash"
+safety = "Documented script install (note the double space before the pipe, as published). Drops the binary in the CWD -- does not place it on PATH."
+
+# ---------------------------------------------------------------------------
+# Cloud / PaaS / networking CLIs
+# ---------------------------------------------------------------------------
+
+[tools.tailscale]
+name = "Tailscale"
+description = "WireGuard-based mesh VPN"
+category = "Cloud / PaaS / networking CLIs"
+url = "https://tailscale.com/kb/1031/install-linux"
+command = "curl -fsSL https://tailscale.com/install.sh | sh"
+safety = "Canonical one-liner (first example in its own script). The installer wraps all logic in a trailing main() so a truncated download executes nothing -- a deliberate partial-download mitigation."
+
+[tools.flyctl]
+name = "Fly.io flyctl"
+description = "CLI to deploy and manage apps on Fly.io"
+category = "Cloud / PaaS / networking CLIs"
+url = "https://fly.io/docs/flyctl/install/"
+command = "curl -L https://fly.io/install.sh | sh"
+safety = "Primary on Linux; on macOS `brew install flyctl` is listed first with this as fallback. Script is 'Based on Deno installer'."
+
+[tools.pulumi]
+name = "Pulumi"
+description = "Multi-cloud Infrastructure-as-Code CLI"
+category = "Cloud / PaaS / networking CLIs"
+url = "https://www.pulumi.com/docs/install/"
+command = "curl -fsSL https://get.pulumi.com | sh"
+command_windows = "iex ((New-Object System.Net.WebClient).DownloadString('https://get.pulumi.com/install.ps1'))"
+safety = "Officially documented script method (brew/choco also offered). Version-pinned variant: | sh -s -- --version <version>."
+
+[tools.heroku]
+name = "Heroku CLI"
+description = "Manage Heroku apps, dynos, and add-ons"
+category = "Cloud / PaaS / networking CLIs"
+url = "https://devcenter.heroku.com/articles/heroku-cli"
+command = "curl https://cli-assets.heroku.com/install.sh | sh"
+safety = "Standalone-install method (Homebrew is primary on macOS). Ubuntu/Debian variant: install-ubuntu.sh. npm method exists but docs note it does not auto-update."
+
+[tools.sentry-cli]
+name = "Sentry CLI"
+description = "Upload source maps and manage Sentry releases/deploys"
+category = "Cloud / PaaS / networking CLIs"
+url = "https://docs.sentry.io/cli/installation/"
+command = "curl -sL https://sentry.io/get-cli/ | sh"
+safety = "Documented 'Automatic Installation' method. Pin with | SENTRY_CLI_VERSION=\"<version>\" sh. Global npm install is discouraged by docs."
+
+[tools.infisical]
+name = "Infisical CLI"
+description = "Secrets management; inject secrets into apps"
+category = "Cloud / PaaS / networking CLIs"
+url = "https://infisical.com/docs/cli/overview"
+command = "curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash"
+safety = "Cloudsmith repo-setup script (then apt-get install infisical). NOTE: pipes into `sudo -E bash`. RPM (setup.rpm.sh) and Alpine (wget ... setup.apk.sh | sudo sh) variants exist."
+
+[tools.railway]
+name = "Railway CLI"
+description = "Manage Railway PaaS projects and deploys"
+category = "Cloud / PaaS / networking CLIs"
+url = "https://docs.railway.com/guides/cli"
+command = "bash <(curl -fsSL railway.com/install.sh)"
+safety = "PRIMARY method -- listed first as the one-step install (macOS/Linux/WSL). Uses process substitution (functionally pipe-to-shell). --agents -y flags are optional."
+
+# ---------------------------------------------------------------------------
+# Shell frameworks / prompts / dotfiles
+# ---------------------------------------------------------------------------
+
+[tools.oh-my-zsh]
+name = "Oh My Zsh"
+description = "Framework for managing zsh configuration (themes, plugins)"
+category = "Shell frameworks / prompts / dotfiles"
+url = "https://github.com/ohmyzsh/ohmyzsh"
+command = "sh -c \"$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\""
+safety = "PRIMARY method. A wget variant is documented: sh -c \"$(wget -O- .../install.sh)\". Officially offers a download-then-INSPECT alternative (download install.sh, read it, then run sh install.sh)."
+
+[tools.oh-my-fish]
+name = "Oh My Fish"
+description = "Plugin/theme framework for the fish shell"
+category = "Shell frameworks / prompts / dotfiles"
+url = "https://github.com/oh-my-fish/oh-my-fish"
+command = "curl https://raw.githubusercontent.com/oh-my-fish/oh-my-fish/master/bin/install | fish"
+safety = "PRIMARY method (pipes into fish). Offers SHA-256 checksum verification of the installer, plus download-then-customize and git/offline options."
+
+[tools.starship]
+name = "Starship"
+description = "Minimal, fast, cross-shell prompt (Rust)"
+category = "Shell frameworks / prompts / dotfiles"
+url = "https://starship.rs/guide/"
+command = "curl -sS https://starship.rs/install.sh | sh"
+safety = "Headline one-liner / primary script method (package managers like Homebrew also offered)."
+
+[tools.zinit]
+name = "Zinit"
+description = "Flexible, fast zsh plugin manager"
+category = "Shell frameworks / prompts / dotfiles"
+url = "https://github.com/zdharma-continuum/zinit"
+command = "bash -c \"$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/zdharma-continuum/zinit/HEAD/scripts/install.sh)\""
+safety = "PRIMARY method ('the easiest way'). README links the installer source so it can be reviewed. Uses long-form curl flags."
+
+[tools.zplug]
+name = "zplug"
+description = "Next-generation zsh plugin manager"
+category = "Shell frameworks / prompts / dotfiles"
+url = "https://github.com/zplug/zplug"
+command = "curl -sL --proto-redir -all,https https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh"
+safety = "PRIMARY method (pipes into zsh). Note --proto-redir -all,https. brew install zplug also offered; README links the installer source."
+
+[tools.fisher]
+name = "Fisher"
+description = "Plugin manager for the fish shell"
+category = "Shell frameworks / prompts / dotfiles"
+url = "https://github.com/jorgebucaran/fisher"
+command = "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher"
+safety = "PRIMARY method. Pipes the function file into fish's `source` builtin (not bash/sh), then self-bootstraps."
+
+[tools.chezmoi]
+name = "chezmoi"
+description = "Dotfile manager for multiple machines"
+category = "Shell frameworks / prompts / dotfiles"
+url = "https://www.chezmoi.io/install/"
+command = "sh -c \"$(curl -fsLS https://get.chezmoi.io)\""
+safety = "Documented 'One-line binary install'; a wget variant exists: sh -c \"$(wget -qO- https://get.chezmoi.io)\". Many package-manager alternatives also offered. Can chain init: ... -- init --apply $GITHUB_USERNAME."
+
+# ---------------------------------------------------------------------------
+# Modern CLI / Rust utilities & dev tools
+# ---------------------------------------------------------------------------
+
+[tools.uv]
+name = "uv"
+description = "Fast Python package & project manager (Astral)"
+category = "Modern CLI / Rust utilities & dev tools"
+url = "https://docs.astral.sh/uv/getting-started/installation/"
+command = "curl -LsSf https://astral.sh/uv/install.sh | sh"
+command_windows = "powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\""
+safety = "PRIMARY (standalone installer). A wget variant exists. Docs suggest inspecting first via `| less` (Unix) / `| more` (PowerShell). Versioned URLs available."
+
+[tools.pnpm]
+name = "pnpm"
+description = "Fast, disk-efficient Node.js package manager"
+category = "Modern CLI / Rust utilities & dev tools"
+url = "https://pnpm.io/installation"
+command = "curl -fsSL https://get.pnpm.io/install.sh | sh -"
+command_windows = "Invoke-WebRequest https://get.pnpm.io/install.ps1 -UseBasicParsing | Invoke-Expression"
+safety = "PRIMARY (standalone script). Note `sh -`. Version-pin via | env PNPM_VERSION=<version> sh -. Windows uses full cmdlet names, not the irm|iex shorthand."
+
+[tools.atuin]
+name = "atuin"
+description = "Magical, synced shell history"
+category = "Modern CLI / Rust utilities & dev tools"
+url = "https://atuin.sh"
+command = "curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh"
+safety = "PRIMARY (homepage one-liner). Hardened TLS flags. No official Windows irm|iex -- PowerShell is only 'tier 2 support'."
+
+[tools.zoxide]
+name = "zoxide"
+description = "Smarter `cd` command that learns your habits"
+category = "Modern CLI / Rust utilities & dev tools"
+url = "https://github.com/ajeetdsouza/zoxide"
+command = "curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh"
+safety = "NOT primary -- README leads with cargo install / brew; the script is an alternative. (Android/Termux section uses | bash.) No Windows irm|iex."
+
+[tools.just]
+name = "just"
+description = "Command runner (a handy `make` alternative)"
+category = "Modern CLI / Rust utilities & dev tools"
+url = "https://github.com/casey/just"
+command = "curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin"
+safety = "NOT primary (cargo/brew/choco led first). REQUIRES a --to DEST arg -- the bare pipe does nothing. install.sh calls GitHub APIs and may be rate-limited on CI (set GITHUB_TOKEN). Hardened TLS."
+
+[tools.mcfly]
+name = "McFly"
+description = "Smart shell-history search (replaces ctrl-r)"
+category = "Modern CLI / Rust utilities & dev tools"
+url = "https://github.com/cantino/mcfly"
+command = "curl -LSfs https://raw.githubusercontent.com/cantino/mcfly/master/ci/install.sh | sh -s -- --git cantino/mcfly"
+safety = "NOT primary (brew led first). REQUIRES --git cantino/mcfly. Use `sudo sh -s` if you lack write access to /usr/local/bin. No Windows irm|iex."
+
+[tools.bob]
+name = "bob"
+description = "Neovim version manager"
+category = "Modern CLI / Rust utilities & dev tools"
+url = "https://github.com/MordechaiHadad/bob"
+command = "curl -fsSL https://raw.githubusercontent.com/MordechaiHadad/bob/master/scripts/install.sh | bash"
+command_windows = "powershell -c \"irm https://raw.githubusercontent.com/MordechaiHadad/bob/master/scripts/install.ps1 | iex\""
+safety = "PRIMARY -- section titled 'Install with the bundled script (recommended)'. Both Unix and Windows documented."
+
+[tools.cargo-binstall]
+name = "cargo-binstall"
+description = "Installs prebuilt Rust binaries (avoids compiling)"
+category = "Modern CLI / Rust utilities & dev tools"
+url = "https://github.com/cargo-bins/cargo-binstall"
+command = "curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+command_windows = "Set-ExecutionPolicy Unrestricted -Scope Process; iex (iwr \"https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.ps1\").Content"
+safety = "PRIMARY for grabbing the binary (cargo install / brew are alternatives). Hardened TLS. Windows uses iex (iwr ...).Content, not irm|iex."
+
+# ---------------------------------------------------------------------------
+# AI / ML
+# ---------------------------------------------------------------------------
+
+[tools.ollama]
+name = "Ollama"
+description = "Run large language models locally"
+category = "AI / ML"
+url = "https://ollama.com/download/linux"
+command = "curl -fsSL https://ollama.com/install.sh | sh"
+safety = "PRIMARY for Linux (script also handles macOS). No inspect-first alternative emphasized."
+
+# ---------------------------------------------------------------------------
+# Databases & data tools
+# ---------------------------------------------------------------------------
+
+[tools.clickhouse]
+name = "ClickHouse"
+description = "Columnar OLAP database"
+category = "Databases & data tools"
+url = "https://github.com/ClickHouse/ClickHouse"
+command = "curl https://clickhouse.com/ | sh"
+safety = "PRIMARY quick-install. NOTE: the endpoint content-negotiates on User-Agent -- it serves the HTML website to browsers but a #!/bin/sh script to curl. A clear example of why 'I opened the URL and it looked fine' is not a guarantee."
+
+[tools.meilisearch]
+name = "Meilisearch"
+description = "Fast, typo-tolerant search engine"
+category = "Databases & data tools"
+url = "https://www.meilisearch.com/docs/learn/self_hosted/install_meilisearch_locally"
+command = "curl -L https://install.meilisearch.com | sh"
+safety = "One of several official methods (cURL tab), alongside Docker/Homebrew/APT/source. Downloads the latest stable release binary."
+
+[tools.duckdb]
+name = "DuckDB"
+description = "In-process analytical (OLAP) database"
+category = "Databases & data tools"
+url = "https://duckdb.org/docs/installation/"
+command = "curl https://install.duckdb.org | sh"
+safety = "Documented install script (a #!/bin/bash installer). Version-pin via | DUCKDB_VERSION=<ver> sh."
+
+[tools.surrealdb]
+name = "SurrealDB"
+description = "Multi-model (document/graph/relational) database"
+category = "Databases & data tools"
+url = "https://github.com/surrealdb/surrealdb"
+command = "curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh"
+safety = "PRIMARY method. Hardened TLS flags. Beta/nightly variants: | sh -s -- --beta or --nightly."
+
+# ---------------------------------------------------------------------------
+# Security / WASM / misc utilities
+# ---------------------------------------------------------------------------
+
+[tools.fermyon-spin]
+name = "Fermyon Spin"
+description = "WebAssembly serverless application framework"
+category = "Security / WASM / misc utilities"
+url = "https://github.com/fermyon/spin"
+command = "curl -fsSL https://spinframework.dev/downloads/install.sh | bash"
+safety = "PRIMARY method. URL is now spinframework.dev (project moved to the CNCF Spin Framework), not the old developer.fermyon.com."
+
+[tools.wasmtime]
+name = "Wasmtime"
+description = "WebAssembly runtime (Bytecode Alliance)"
+category = "Security / WASM / misc utilities"
+url = "https://wasmtime.dev"
+command = "curl https://wasmtime.dev/install.sh -sSf | bash"
+safety = "PRIMARY method."
+
+[tools.wasmedge]
+name = "WasmEdge"
+description = "Lightweight WebAssembly runtime (CNCF)"
+category = "Security / WASM / misc utilities"
+url = "https://wasmedge.org/docs/start/install/"
+command = "curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash"
+safety = "PRIMARY ('the easiest way to install'). Variants: | bash -s -- -p /usr/local (system dir) and -v $VERSION. Requires git and curl."
+
+[tools.wasmer]
+name = "Wasmer"
+description = "WebAssembly runtime"
+category = "Security / WASM / misc utilities"
+url = "https://github.com/wasmerio/wasmer"
+command = "curl https://get.wasmer.io -sSfL | sh"
+safety = "PRIMARY method."
+
+[tools.trivy]
+name = "Trivy"
+description = "Vulnerability and misconfiguration scanner (Aqua)"
+category = "Security / WASM / misc utilities"
+url = "https://trivy.dev/latest/getting-started/installation/"
+command = "curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin"
+safety = "One of several methods (brew/apt/rpm also offered). NOTE: pipes into `sudo sh`. Append a version tag at the end (docs show a {{ git.tag }} placeholder); omit for latest."
+
+[tools.syft]
+name = "Syft"
+description = "SBOM (software bill of materials) generator (Anchore)"
+category = "Security / WASM / misc utilities"
+url = "https://github.com/anchore/syft"
+command = "curl -sSfL https://get.anchore.io/syft | sudo sh -s -- -b /usr/local/bin"
+safety = "Prominent documented method. NOTE: pipes into `sudo sh`. Current URL is get.anchore.io/syft (older docs used a raw.githubusercontent.com path)."
+
+[tools.grype]
+name = "Grype"
+description = "Vulnerability scanner for container images & filesystems (Anchore)"
+category = "Security / WASM / misc utilities"
+url = "https://github.com/anchore/grype"
+command = "curl -sSfL https://get.anchore.io/grype | sudo sh -s -- -b /usr/local/bin"
+safety = "Prominent documented method. NOTE: pipes into `sudo sh`. Same get.anchore.io pattern as syft."
+
+[tools.croc]
+name = "croc"
+description = "Easy, end-to-end encrypted file transfer"
+category = "Security / WASM / misc utilities"
+url = "https://github.com/schollz/croc"
+command = "curl https://getcroc.schollz.com | bash"
+safety = "Documented method, alongside brew/scoop/distro packages/release binaries."
+
+[tools.eget]
+name = "eget"
+description = "Download prebuilt binaries from GitHub releases"
+category = "Security / WASM / misc utilities"
+url = "https://github.com/zyedidia/eget"
+command = "curl https://zyedidia.github.io/eget.sh | sh"
+safety = "Documented bootstrap method (also via go install / brew / release binary)."
+
+# ---------------------------------------------------------------------------
+# Offered the one-liner BUT officially steer users to a safer download-first flow
+# ---------------------------------------------------------------------------
+
+[tools.docker]
+name = "Docker"
+description = "Container engine; convenience script configures repos & installs Engine"
+category = "Offered but officially warns against blind pipe"
+url = "https://get.docker.com"
+command = "curl -fsSL https://get.docker.com -o install-docker.sh && sh install-docker.sh --dry-run && sudo sh install-docker.sh"
+safety = "Convenience script EXISTS but the documented flow is download -> cat/inspect -> --dry-run -> sudo run. Explicitly 'not recommended for production'. Script guards against partial `curl | sh` downloads via a main() wrapper."
+
+[tools.helm]
+name = "Helm"
+description = "Package manager for Kubernetes"
+category = "Offered but officially warns against blind pipe"
+url = "https://helm.sh/docs/intro/install/"
+command = "curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 && chmod 700 get_helm.sh && ./get_helm.sh"
+safety = "Pipe form `curl .../get-helm-4 | bash` is offered only 'if you want to live on the edge'. RECOMMENDED flow downloads first so you can 'read through it and understand what it is doing before you run it'. FAQ openly discusses the trade-offs and wishes for better packaged releases."
