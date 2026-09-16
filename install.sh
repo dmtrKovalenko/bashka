@@ -87,7 +87,8 @@ check_sha256() {
 }
 
 main() {
-    local target tag expected tmp asset url
+    local target tag expected asset url
+    # Not local: the EXIT trap runs after main returns and must still see it under set -u.
     target="$(detect_target)"
     tag="$PINNED_RELEASE_TAG"
     expected="$(pinned_sha "$target")"
