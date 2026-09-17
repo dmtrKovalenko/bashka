@@ -200,20 +200,33 @@ jobs:
           git push origin "$tag"
 
       - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.version.outputs.tag }}
-          name: ${{ needs.version.outputs.tag }}
-          generate_release_notes: true
-          files: |
-            binaries/*
-            install.sh
-          body: |
-            ```sh
-            curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/dmtrKovalenko/bashka/main/install.sh | bash
-            ```
-            `install.sh` on `main` is pinned to the checksums of these binaries. Already have bashka? `bashka update bashka`.
-            Also: `brew install dmtrKovalenko/bashka/bashka`, `cargo install bashka`, `cargo binstall bashka`, `mise use -g github:dmtrKovalenko/bashka`.
+        # gh instead of an action: assets go up one at a time with retries, and every step is a
+        # no-op when it already happened, so GitHub's upload hiccups are survived or re-runnable.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ needs.version.outputs.tag }}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --draft --title "$tag" --generate-notes --notes-file - <<'NOTES'
+          ```sh
+          curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/dmtrKovalenko/bashka/main/install.sh | bash
+          ```
+          `install.sh` on `main` is pinned to the checksums of these binaries. Already have bashka? `bashka update bashka`.
+          Also: `brew install dmtrKovalenko/bashka/bashka`, `cargo install bashka`, `cargo binstall bashka`, `mise use -g github:dmtrKovalenko/bashka`.
+          NOTES
+          fi
+          for f in binaries/* install.sh; do
+            for attempt in 1 2 3 4 5; do
+              gh release upload "$tag" "$f" --clobber && break
+              echo "upload of $f failed (attempt $attempt), retrying"
+              sleep $((attempt * 10))
+              [ "$attempt" -lt 5 ] || exit 1
+            done
+          done
+          expected=$(ls binaries | wc -l); expected=$((expected + 1))
+          uploaded=$(gh release view "$tag" --json assets --jq '.assets | length')
+          [ "$uploaded" -eq "$expected" ] || { echo "release has $uploaded assets, expected $expected"; exit 1; }
+          gh release edit "$tag" --draft=false --latest
 
       # Only now does main point install.sh at this release: it went public in the step above.
       - name: Push main
