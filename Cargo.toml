@@ -1,6 +1,6 @@
 [package]
 name = "bashka"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2024"
 description = "A safety guard for `curl <url> | bash`: analyzes the script before it runs"
 license = "MIT"
