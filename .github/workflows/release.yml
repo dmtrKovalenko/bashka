@@ -1,6 +1,6 @@
 name: Release
 
-# Every push to main becomes a release: the minor version in Cargo.toml is bumped (cargo-edit), binaries are built for
+# Every push to main becomes a release: the minor above the highest v* tag is chosen, binaries are built for
 # Linux (glibc and musl), Android and macOS, install.sh and Formula/bashka.rb are pinned to their checksums, the bump is committed
 # back to main under a `vX.Y.0` tag and the crate is published. Pull requests only build and test.
 
@@ -31,18 +31,16 @@ jobs:
         with:
           tool: cargo-edit
       - id: next
-        # Cargo.toml holds the last released version (the release job commits the bump). Tags that
-        # already exist (releases cut from rewritten history) are skipped, so a rewrite of main
-        # never wedges the pipeline.
+        # The next version is one minor above the highest v* tag on origin (Cargo.toml is only the
+        # fallback for a repo without tags), so a rewritten or lagging main never wedges the pipeline.
         run: |
-          current() { cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version'; }
+          latest="$(git ls-remote --tags origin 'refs/tags/v*' | sed -n 's|.*refs/tags/v\([0-9][0-9.]*\)$|\1|p' | sort -V | tail -1)"
+          if [ -n "$latest" ]; then
+            echo "latest tag on origin: v$latest"
+            cargo set-version "$latest"
+          fi
           cargo set-version --bump minor
-          version="$(current)"
-          while git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null 2>&1; do
-            echo "v$version is already tagged on origin, skipping"
-            cargo set-version --bump minor
-            version="$(current)"
-          done
+          version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
           echo "version=$version" >>"$GITHUB_OUTPUT"
           echo "tag=v$version" >>"$GITHUB_OUTPUT"
           echo "next release: v$version"
@@ -180,16 +178,27 @@ jobs:
           ruby -c Formula/bashka.rb
 
       - name: Commit and tag
+        # Re-running a failed job after the tag was pushed reuses the tag instead of committing
+        # again, so a GitHub hiccup at upload or publish time is fixed by "Re-run failed jobs".
         run: |
+          tag="${{ needs.version.outputs.tag }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "$tag is already on origin, releasing from it"
+            git fetch origin "refs/tags/$tag:refs/tags/$tag"
+            git diff --quiet "$tag" -- Cargo.toml Cargo.lock install.sh Formula/bashka.rb \
+              || { echo "pinned files differ from $tag; refusing to release"; exit 1; }
+            git checkout -f "$tag"
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Cargo.toml Cargo.lock install.sh Formula/bashka.rb
-          git commit -m "chore: release ${{ needs.version.outputs.tag }} [skip ci]"
+          git commit -m "chore: release $tag [skip ci]"
           # Rebase first: commits pushed to main meanwhile must end up below the tag, not beside it.
           git pull --rebase origin main
-          git tag -a "${{ needs.version.outputs.tag }}" -m "bashka ${{ needs.version.outputs.tag }}"
+          git tag -a "$tag" -m "bashka $tag"
           git push origin HEAD:main
-          git push origin "${{ needs.version.outputs.tag }}"
+          git push origin "$tag"
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
@@ -214,4 +223,10 @@ jobs:
       - name: Publish to crates.io
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.crates-io-auth.outputs.token }}
-        run: cargo publish --locked
+        run: |
+          version="${{ needs.version.outputs.version }}"
+          if curl -fsS -A "bashka-release (github actions)" "https://crates.io/api/v1/crates/bashka/$version" >/dev/null 2>&1; then
+            echo "bashka $version is already on crates.io"
+            exit 0
+          fi
+          cargo publish --locked
