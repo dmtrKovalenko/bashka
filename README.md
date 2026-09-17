@@ -22,10 +22,9 @@ curl --proto '=https' --tlsv1.2 -fsSL https://bashka.dmtrkovalenko.dev | bash
 
 Or skip bash entirely. The following methods install a release binary or build from source:
 
-**Homebrew** (macOS and Linux). The tap lives in this repo, so it is tapped by URL:
+**Homebrew** (macOS and Linux):
 
 ```sh
-brew tap dmtrKovalenko/bashka https://github.com/dmtrKovalenko/bashka
 brew install bashka
 ```
 
