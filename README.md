@@ -39,7 +39,7 @@ cargo binstall bashka         # downloads the release binary
 **mise**
 
 ```sh
-mise use -g ubi:dmtrKovalenko/bashka   # prebuilt binary from GitHub releases
+mise use -g github:dmtrKovalenko/bashka   # prebuilt binary from GitHub releases
 mise use -g cargo:bashka               # or build from crates.io
 ```
 

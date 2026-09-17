@@ -205,7 +205,7 @@ jobs:
             curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/dmtrKovalenko/bashka/main/install.sh | bash
             ```
             `install.sh` on `main` is pinned to the checksums of these binaries. Already have bashka? `bashka update bashka`.
-            Also: `brew install dmtrKovalenko/bashka/bashka`, `cargo install bashka`, `cargo binstall bashka`, `mise use -g ubi:dmtrKovalenko/bashka`.
+            Also: `brew install dmtrKovalenko/bashka/bashka`, `cargo install bashka`, `cargo binstall bashka`, `mise use -g github:dmtrKovalenko/bashka`.
 
       # Trusted publishing: crates.io > bashka > Settings > Trusted Publishing must list this repo and
       # workflow file. The step runs last so a misconfiguration never blocks the GitHub release.
