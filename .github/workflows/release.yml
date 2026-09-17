@@ -1,8 +1,8 @@
 name: Release
 
 # Every push to main becomes a release: the minor above the highest v* tag is chosen, binaries are built for
-# Linux (glibc and musl), Android and macOS, install.sh and Formula/bashka.rb are pinned to their checksums, the bump is committed
-# back to main under a `vX.Y.0` tag and the crate is published. Pull requests only build and test.
+# Linux (glibc and musl), Android and macOS, install.sh and Formula/bashka.rb are pinned to their checksums, the bump is tagged
+# `vX.Y.0`, the GitHub release goes out, then the bump lands on main and the crate is published. Pull requests only build and test.
 
 on:
   push:
@@ -197,7 +197,6 @@ jobs:
           # Rebase first: commits pushed to main meanwhile must end up below the tag, not beside it.
           git pull --rebase origin main
           git tag -a "$tag" -m "bashka $tag"
-          git push origin HEAD:main
           git push origin "$tag"
 
       - name: Publish GitHub release
@@ -215,6 +214,10 @@ jobs:
             ```
             `install.sh` on `main` is pinned to the checksums of these binaries. Already have bashka? `bashka update bashka`.
             Also: `brew install dmtrKovalenko/bashka/bashka`, `cargo install bashka`, `cargo binstall bashka`, `mise use -g github:dmtrKovalenko/bashka`.
+
+      # Only now does main point install.sh at this release: it went public in the step above.
+      - name: Push main
+        run: git push origin HEAD:main
 
       # Trusted publishing: crates.io > bashka > Settings > Trusted Publishing must list this repo and
       # workflow file. The step runs last so a misconfiguration never blocks the GitHub release.
