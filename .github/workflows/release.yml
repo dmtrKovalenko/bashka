@@ -34,7 +34,7 @@ jobs:
         # The next version is one minor above the highest v* tag on origin (Cargo.toml is only the
         # fallback for a repo without tags), so a rewritten or lagging main never wedges the pipeline.
         run: |
-          latest="$(git ls-remote --tags origin 'refs/tags/v*' | sed -n 's|.*refs/tags/v\([0-9][0-9.]*\)$|\1|p' | sort -V | tail -1)"
+          latest="$(git ls-remote --tags origin 'refs/tags/v*' | sed -nE 's|.*refs/tags/v([0-9]+\.[0-9]+\.[0-9]+)$|\1|p' | sort -V | tail -1)"
           if [ -n "$latest" ]; then
             echo "latest tag on origin: v$latest"
             cargo set-version "$latest"
