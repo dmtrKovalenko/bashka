@@ -1,9 +1,11 @@
 mod anti_forensics;
+mod auto_update;
 mod banned_commands;
 mod checksum;
 mod cleanup_artifacts;
 mod credential_theft;
 mod domain_refs;
+mod dynamic_download;
 mod env_hijack;
 mod exfil_destination;
 mod exfiltration;

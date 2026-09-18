@@ -1,10 +1,10 @@
-# Corpus validation (2026-09-15)
+# Corpus validation (2026-09-18)
 
 `bashka --check` (verdict taken from the exit code) over every installer in `installers.toml`, with `follow_remote = "always"`; nothing is executed.
 
 The harness feeds each script on stdin without a real `curl`, so origin-based trust is not exercised: installers served from a vanity domain show NEUTRAL here but are GREEN under real `curl <url> | bashka` use.
 
-Verdicts: DEAD 2, RED 14, NEUTRAL 15, GREEN 30.
+Verdicts: DEAD 2, RED 16, NEUTRAL 13, GREEN 30.
 
 | installer | verdict | layers | findings | notes |
 |---|---|---|---|---|
@@ -13,6 +13,8 @@ Verdicts: DEAD 2, RED 14, NEUTRAL 15, GREEN 30.
 | atuin | RED | 1 | https_only, mutable_refs, privilege_escalation, sensitive_write×2, tls_hardening, trusted_domains |  |
 | bun | RED | 1 | https_only, privilege_escalation, staged_installer, strict_mode, trusted_domains |  |
 | cargo-binstall | RED | 1 | https_only, mutable_refs, privilege_escalation, staged_installer, strict_mode, tls_hardening, trusted_domains |  |
+| clickhouse | RED | 1 | https_only, many_downloads, not_a_script |  |
+| croc | RED | 1 | https_only, not_a_script |  |
 | deno | RED | 1 | https_only, privilege_escalation, staged_installer |  |
 | fermyon-spin | RED | 1 | https_only, privilege_escalation, staged_installer, strict_mode, trusted_domains |  |
 | flux | RED | 1 | cleanup_artifacts, https_only, install_dir, obfuscation, privilege_escalation, trusted_domains×2 |  |
@@ -24,8 +26,6 @@ Verdicts: DEAD 2, RED 14, NEUTRAL 15, GREEN 30.
 | rye | RED | 1 | cleanup_artifacts, https_only, privilege_escalation, staged_installer, strict_mode, trusted_domains |  |
 | uv | RED | 1 | checksum, https_only, privilege_escalation, staged_installer, trusted_domains |  |
 | wasmer | RED | 1 | https_only, obfuscation×5, privilege_escalation, trusted_domains×2 |  |
-| clickhouse | NEUTRAL | 1 | https_only, many_downloads |  |
-| croc | NEUTRAL | 1 | https_only |  |
 | docker | NEUTRAL | 1 | https_only, many_downloads |  |
 | duckdb | NEUTRAL | 1 | https_only, many_downloads, privilege_escalation |  |
 | fisher | NEUTRAL | 1 |  |  |
@@ -34,7 +34,7 @@ Verdicts: DEAD 2, RED 14, NEUTRAL 15, GREEN 30.
 | jabba | NEUTRAL | 1 | https_only, mutable_refs, trusted_domains |  |
 | oh-my-fish | NEUTRAL | 1 |  | <stdin>: shebang `fish` is not a bash dialect; findings may be incomplete |
 | oh-my-zsh | NEUTRAL | 1 | https_only, privilege_escalation, trusted_domains |  |
-| tailscale | NEUTRAL | 1 | checksum, https_only, many_downloads, package_repos, persistence, privilege_escalation, telemetry |  |
+| tailscale | NEUTRAL | 1 | checksum, https_only, many_downloads, package_repos, persistence, privilege_escalation |  |
 | tilt | NEUTRAL | 1 | cleanup_artifacts, install_dir, privilege_escalation |  |
 | volta | NEUTRAL | 1 | checksum, https_only, privilege_escalation |  |
 | zoxide | NEUTRAL | 1 | https_only, mutable_refs, privilege_escalation, trusted_domains |  |

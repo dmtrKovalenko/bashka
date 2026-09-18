@@ -80,12 +80,15 @@ Findings come in four kinds: 💀 **💀** (critically malicious, blocks hard), 
 | 🔴    | `obfuscation`          | `eval` of opaque code (`eval "$CMD"`, `eval $(…)`), decode-then-execute pipelines                                                                                       |
 | 🔴    | `package_managers`     | pulls code from npm/npx/pip/cargo/go/gem/brew/docker or editor extensions; 🔴 on URL/git/mutable ref/foreign registry/`--privileged`, yellow on a plain global install |
 | 🔴    | `path_suspicious`      | `PATH` gains a temp, relative or world-writable directory                                                                                                               |
+| 🔴    | `auto_update`          | writes a launcher to disk (shebang heredoc) that downloads by itself every time it runs: self-updating, never reviewed again                                            |
+| 🔴    | `dynamic_download`     | fetches whatever address another command returns (`curl "$(get url)"`, usually a field from a server reply); URLs the script names itself, even with `$VERSION` filled in, are fine |
 | 🔴    | `remote_exec`          | fetch->exec forward sinks (drives chain following)                                                                                                                      |
 | 🔴    | `scheduled_tasks`      | schedules code via cron, `at`, systemd timers, autostart or rc.local                                                                                                    |
 | 🔴    | `security_tampering`   | disables firewall/SELinux/AppArmor/Gatekeeper/SIP                                                                                                                       |
 | 🔴    | `self_extract`         | reads its own bytes (`$0`) with sed/tail/dd/base64 and pipes the result into a shell                                                                                    |
 | 🔴    | `sensitive_write`      | writes to shell rc files, `~/.ssh`, `/etc/sudoers`, crontab                                                                                                             |
 | 🔴    | `staged_installer`     | downloads a program and runs it to do the install; the second stage is opaque to review                                                                                 |
+| 🔴    | `telemetry`            | sends data out (`POST`/`--data`, or analytics URLs); notes machine details in the body (`uname`, `hostname`) and a UUID saved as a persistent id                          |
 | 🔴    | `unicode_tricks`       | invisible, bidi, or homoglyph characters in a command name or URL, or a punycode host                                                                                   |
 | 🔴    | `unsafe_rm`            | `rm -rf "$VAR/"` where the variable may be empty and there is no guard or `set -u`                                                                                      |
 | 🔴    | `upload_exfil`         | uploads files (`curl -T`, `-F @file`, `--data @file`), copies out via scp/rsync, or DNS-exfil via `dig $(…)`                                                            |
@@ -94,7 +97,6 @@ Findings come in four kinds: 💀 **💀** (critically malicious, blocks hard), 
 | 🟡 | `mutable_refs`         | downloads from `master`/`main`/`HEAD`/`latest` instead of a pinned version                                                                                              |
 | 🟡 | `package_repos`        | adds apt/yum/zypper repositories or signing keys                                                                                                                        |
 | 🟡 | `persistence`          | installs systemd/launchd services or init scripts                                                                                                                       |
-| 🟡 | `telemetry`            | sends data out (`POST`/`--data`, or analytics URLs)                                                                                                                     |
 
 ## CLI
 

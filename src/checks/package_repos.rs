@@ -32,6 +32,8 @@ fn adds_repo(c: &Command) -> Option<&'static str> {
             Some("YUM/DNF repository")
         }
         "zypper" if c.has_arg("addrepo") || c.has_arg("ar") => Some("zypper repository"),
+        // An uninstaller removing its own repo file adds nothing.
+        "rm" | "unlink" => None,
         _ if touches_repo_dir => Some("package repository definition"),
         _ => None,
     }
@@ -80,6 +82,13 @@ mod tests {
             "package_repos",
             "sudo dnf config-manager --add-repo https://x.io/x.repo"
         ));
+        assert!(
+            !fires(
+                "package_repos",
+                "rm -f /etc/zypp/repos.d/rancher-k3s-common*.repo"
+            ),
+            "removing a repo file adds nothing"
+        );
         assert!(!fires("package_repos", "apt-get install -y curl"));
     }
 }
