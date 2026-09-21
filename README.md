@@ -2,7 +2,7 @@
 
 A drop-in safety guard for the `curl … | bash` install pattern. Bashka parses the incoming script, scores it against many different checks, follows forwarded scripts so every layer is analyzed and if it found some unsafety it gives you an easy way to read a script or analyze using your AI agent.
 
-Useage is simple as adding **ka** after the standard installation script
+Usage is simple as adding **ka** after the standard installation script
 
 ```sh
 curl -fsSL https://pyenv.run | bashka
