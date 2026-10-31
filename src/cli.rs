@@ -114,10 +114,51 @@ pub enum Cmd {
         #[command(subcommand)]
         cmd: ConfigCmd,
     },
+    /// Print a shell completion script.
+    Completions {
+        /// The shell to generate the script for.
+        #[arg(value_enum)]
+        shell: clap_complete::Shell,
+    },
 }
 
 #[derive(Debug, Subcommand)]
 pub enum ConfigCmd {
     /// Print a fully commented default configuration.
     Init,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+
+    /// The generated script must keep describing the CLI: a dropped command or flag here is a
+    /// silent hole in `bashka completions`.
+    #[test]
+    fn completions_cover_the_cli() {
+        let mut cmd = Cli::command();
+        let mut buf: Vec<u8> = Vec::new();
+        clap_complete::generate(clap_complete::Shell::Bash, &mut cmd, "bashka", &mut buf);
+        let script = String::from_utf8(buf).unwrap();
+        assert!(script.contains("bashka"), "{script}");
+        for want in [
+            "flags",
+            "list",
+            "info",
+            "remove",
+            "update",
+            "config",
+            "completions",
+            "--force",
+            "--check",
+            "--descend",
+            "--dry-run",
+        ] {
+            assert!(
+                script.contains(want),
+                "completion script is missing {want}:\n{script}"
+            );
+        }
+    }
 }

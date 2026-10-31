@@ -511,6 +511,24 @@ fn flags_and_config_init_subcommands() {
 }
 
 #[test]
+fn completions_prints_a_static_script_for_the_shell() {
+    // Generated in-process: no external tooling, no spec re-read at Tab time.
+    let run = bashka("echo hi", &["completions", "bash"], &[]);
+    assert_eq!(run.code, 0, "{}", run.stderr);
+    assert!(run.stdout.contains("bashka"), "{}", run.stdout);
+    assert!(run.stdout.contains("--force"), "{}", run.stdout);
+
+    let run = bashka("", &["completions", "zsh"], &[]);
+    assert_eq!(run.code, 0, "{}", run.stderr);
+    assert!(run.stdout.contains("_bashka"), "{}", run.stdout);
+
+    // An unsupported shell is rejected by the CLI itself, with the valid choices.
+    let run = bashka("", &["completions", "nu"], &[]);
+    assert_ne!(run.code, 0);
+    assert!(run.stderr.contains("possible values"), "{}", run.stderr);
+}
+
+#[test]
 fn config_errors_fail_fast() {
     let cfg = config("[flags]\nmax_commands = { limt = 3 }\n");
     let run = bashka("echo hi", &["--config", cfg.path().to_str().unwrap()], &[]);

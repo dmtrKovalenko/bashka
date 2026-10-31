@@ -117,6 +117,8 @@ main() {
             ;;
     esac
     echo
+    echo "want tab-completion? '$APP_NAME completions <shell>' prints a script for your shell (e.g. bash, zsh, fish)"
+    echo
     echo "next time, make the bash installation safer by adding ka, e.g."
     printf '  curl -fsSL https://dmtrkovalenko.dev/install-fff-mcp.sh | bash\033[1;35mka\033[0m\n'
 }

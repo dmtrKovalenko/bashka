@@ -21,7 +21,8 @@ mod url;
 mod vet;
 
 use anyhow::Result;
-use clap::Parser;
+use clap::{CommandFactory, Parser};
+use clap_complete::Shell;
 use cli::{Cli, Cmd, ConfigCmd};
 use runner::Inherit;
 use sha2::{Digest, Sha256};
@@ -53,9 +54,9 @@ fn main() -> ExitCode {
     }
 }
 
-/// Usage hint plus the install registry, shown when bashka runs with no script piped in.
-fn welcome() -> Result<String> {
-    let prog = std::env::args().next().map_or_else(
+/// The name the binary was invoked as (the file name of `argv[0]`, defaulting to `bashka`).
+fn bin_name() -> String {
+    std::env::args().next().map_or_else(
         || "bashka".into(),
         |a| {
             std::path::Path::new(&a)
@@ -63,7 +64,12 @@ fn welcome() -> Result<String> {
                 .map(|f| f.to_string_lossy().into_owned())
                 .unwrap_or(a)
         },
-    );
+    )
+}
+
+/// Usage hint plus the install registry, shown when bashka runs with no script piped in.
+fn welcome() -> Result<String> {
+    let prog = bin_name();
     let mut out = format!(
         "{} curl -fsSL <url> | {prog}\n{}\n\n",
         ui::paint(ui::BOLD, "usage:"),
@@ -71,6 +77,15 @@ fn welcome() -> Result<String> {
     );
     out.push_str(&installed::list(false)?);
     Ok(out)
+}
+
+/// Prints a statically generated shell completion script: every command and flag is baked into
+/// the script itself, so nothing has to run at Tab time and users install no extra tooling.
+fn completions(shell: Shell) {
+    let mut cmd = Cli::command();
+    let mut buf: Vec<u8> = Vec::new();
+    clap_complete::generate(shell, &mut cmd, bin_name(), &mut buf);
+    anstream::print!("{}", String::from_utf8_lossy(&buf));
 }
 
 fn run(cli: Cli) -> Result<i32> {
@@ -95,6 +110,10 @@ fn run(cli: Cli) -> Result<i32> {
         }
         Some(Cmd::Remove { name, dry_run }) => return installed::remove(&name, dry_run),
         Some(Cmd::Update { name }) => return installed::update(&name, &cli.opts),
+        Some(Cmd::Completions { shell }) => {
+            completions(shell);
+            return Ok(0);
+        }
         None => {}
     }
     // Invoked bare from a terminal: nothing to analyze, so show how to use it and what is installed.
