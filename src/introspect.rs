@@ -83,7 +83,7 @@ mod tests {
                 reg.id
             );
         }
-        assert!(cfg.unknown_flags().is_empty());
+        assert_eq!(cfg.unknown_flags(), [] as [&str; 0]);
         // Every commented example must itself be valid for its flag.
         for line in text
             .lines()

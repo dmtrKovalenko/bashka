@@ -182,7 +182,7 @@ mod tests {
     fn round_trips_through_toml() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("nested").join("installed.toml");
-        assert!(load_from(&path).unwrap().packages.is_empty());
+        assert_eq!(load_from(&path).unwrap().packages, []);
         let mut lock = Lockfile::default();
         lock.upsert(Package {
             name: "mise".into(),

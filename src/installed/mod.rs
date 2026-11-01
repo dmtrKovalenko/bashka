@@ -786,7 +786,7 @@ mod tests {
             me.binaries,
             vec![PathBuf::from("/home/t/.local/bin/bashka")]
         );
-        assert!(me.dirs.is_empty());
+        assert_eq!(me.dirs, [] as [PathBuf; 0]);
         assert!(self_package(Path::new("/usr/local/bin/bashka"), home).is_some());
         assert!(self_package(Path::new("/home/t/.cargo/bin/bashka"), home).is_some());
         assert!(
