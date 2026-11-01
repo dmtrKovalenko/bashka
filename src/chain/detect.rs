@@ -142,8 +142,8 @@ mod tests {
 
     #[test]
     fn ignores_downloads_to_files() {
-        assert!(fwds("curl -fsSL -o /tmp/x https://a.io/i | bash").is_empty());
-        assert!(fwds("curl https://a.io/i | tar xz").is_empty());
-        assert!(fwds("wget -O out.sh https://a.io/i").is_empty());
+        assert_eq!(fwds("curl -fsSL -o /tmp/x https://a.io/i | bash"), []);
+        assert_eq!(fwds("curl https://a.io/i | tar xz"), []);
+        assert_eq!(fwds("wget -O out.sh https://a.io/i"), []);
     }
 }

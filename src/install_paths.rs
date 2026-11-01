@@ -463,22 +463,25 @@ mod tests {
             raws("ensure try_sudo mkdir -p -- \"${_ZOXIDE_BIN_DIR}\""),
             ["${_ZOXIDE_BIN_DIR}"]
         );
-        assert!(raws("echo mkdir -p /opt/x").is_empty());
-        assert!(raws("need_cmd chmod\nneed_cmd mkdir").is_empty());
-        assert!(raws("cp only-one-arg").is_empty());
-        assert!(raws("curl -o - https://x").is_empty());
+        assert_eq!(raws("echo mkdir -p /opt/x"), [] as [&str; 0]);
+        assert_eq!(raws("need_cmd chmod\nneed_cmd mkdir"), [] as [&str; 0]);
+        assert_eq!(raws("cp only-one-arg"), [] as [&str; 0]);
+        assert_eq!(raws("curl -o - https://x"), [] as [&str; 0]);
     }
 
     #[test]
     fn skips_temporary_locations() {
-        assert!(raws("TMP=$(mktemp -d)\ncurl -o \"$TMP/a\" https://x").is_empty());
-        assert!(
+        assert_eq!(
+            raws("TMP=$(mktemp -d)\ncurl -o \"$TMP/a\" https://x"),
+            [] as [&str; 0]
+        );
+        assert_eq!(
             raws(
                 "_dir=\"$(ensure mktemp -d)\"\n_file=\"${_dir}/rustup-init\"\nchmod u+x \"$_file\""
-            )
-            .is_empty()
+            ),
+            [] as [&str; 0]
         );
-        assert!(raws("mkdir -p /tmp/x").is_empty());
+        assert_eq!(raws("mkdir -p /tmp/x"), [] as [&str; 0]);
     }
 
     #[test]

@@ -209,7 +209,7 @@ fn yes_does_not_bypass_the_strong_gate_but_force_does() {
     let script = "echo hi >> ~/.bashrc\ncurl -s http://127.0.0.1:9/x | sh\nchmod -R 777 /nonexistent-dir-for-test || true\necho ran\n";
     let run = bashka(script, &["--yes"], &[]);
     assert_eq!(run.code, 1);
-    assert!(run.stdout.is_empty());
+    assert_eq!(run.stdout, "");
     let cfg = config("[interaction]\nfollow_remote = \"never\"\n");
     let run = bashka(
         script,
@@ -251,7 +251,7 @@ fn declining_a_forward_aborts_safely_without_a_terminal() {
         fixture("forwarder.sh").replace("\"$INNER_URL\"", &format!("http://{host}/inner.sh"));
     let run = bashka(&script, &["--non-interactive"], &[]);
     assert_eq!(run.code, 1);
-    assert!(run.stdout.is_empty());
+    assert_eq!(run.stdout, "");
     assert!(!run.stderr.contains("across 2 layers"), "{}", run.stderr);
 }
 
@@ -538,7 +538,7 @@ fn config_errors_fail_fast() {
         "{}",
         run.stderr
     );
-    assert!(run.stdout.is_empty());
+    assert_eq!(run.stdout, "");
 
     let cfg = config("[flags]\nmax_commmands = true\n");
     let run = bashka(
